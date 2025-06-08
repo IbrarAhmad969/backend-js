@@ -1,4 +1,4 @@
-import mongoose, { mongo, Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 //for watch history we will import paginate pkg
 
@@ -7,43 +7,38 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const videoSchema = new Schema({
 
-    videoFile: {
-        type: String, // cloudinary url
-        required: true,
-    },
-    thumbnail: {
-        type: String, // cloudinary url
-        required: true,
-    },
-    title: {
-        type: String,
-        required: true,
-    },
-    description: {
-        type: String,
-        required: true,
-    },
-    description: {
-        type: String, // cloudinary url
-        required: true,
-    },
-    description: {
-        type: Number, // cloudinary url
-        required: true,
-    },
-    views: {
-        type: Number,
-        default: 0,
-    },
-    isPublished: {
-        type: Boolean,
-        default: true,
-
-    },
-    owner: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-    }
+        videoFile: {
+            type: String, //cloudinary url
+            required: true
+        },
+        thumbnail: {
+            type: String, //cloudinary url
+            required: true
+        },
+        title: {
+            type: String, 
+            required: true
+        },
+        description: {
+            type: String, 
+            required: true
+        },
+        duration: {
+            type: Number, 
+            required: true
+        },
+        views: {
+            type: Number,
+            default: 0
+        },
+        isPublished: {
+            type: Boolean,
+            default: true
+        },
+        owner: {
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        }
 
 }, { timestamps: true })
 
