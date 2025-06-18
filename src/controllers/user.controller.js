@@ -20,7 +20,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // Check if user Already exists or not get the user model 
     // check for email or password, use or operator 
 
-    const existedUser = User.findOne({
+    const existedUser =await User.findOne({
         $or: [{ username }, { email }]
     })
 
@@ -59,7 +59,8 @@ const registerUser = asyncHandler(async (req, res) => {
         username: username.toLowerCase()
     })
 
-    const createdUser = await User.findById(user._id).select("-password -refreshToken") // if user is found
+    const createdUser = await User.findById(user._id).select("-password -refreshToken") // if user is found -means don't pick it up.
+    
     if(!createdUser){
         throw new ApiError(500, "Something went wrong while registering a User")
     }
