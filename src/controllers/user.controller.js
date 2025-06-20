@@ -4,6 +4,31 @@ import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/Cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 
+const generateAccessAndRefreshTokens = async(userId)=>{
+    try {
+        const user = await User.findById(userId)
+        // now generate the tokens 
+        
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken();
+
+        // we only store our refresh token 
+
+        user.refreshToken = refreshToken
+        // save in the mongo DB, for save we need a password, we give another var.
+        // no need to validate passwords or thing. 
+
+        user.save({validateBeforeSave: false})
+
+        // return , by returning accessToken is creating itself. we called the method
+
+        return {accessToken, refreshToken}
+
+
+    } catch (error) {
+        throw new ApiError(500, "Something Went wrong while generating Refresh and Access token")
+    }
+}
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -74,4 +99,127 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-export default registerUser
+// login user 
+const loginUser = asyncHandler(async(req, res)=>{
+    // Steps to Login User. 
+
+    // Step1. Req body sy data lo
+    // username or email, login on one basis.
+    // find the user
+    // if no user, no request 
+    // if user is present, check password
+    // if Password is okay, Access token and refresh token
+    // send these tokens in cookies. and give response 
+
+
+    // Step1. Req body sy data lo
+    const {email, username, password} = req.body
+
+    // i need one of them, check condition 
+
+    if(!username || !email){
+        throw new ApiError(400, "User Name or Password is required")
+    }
+    /// if both are there, then we have to login. we have to find on the basis of both ..
+
+    const user = await User.findOne({ // array k andar object bhjo aur check ho jye ga
+        $or: [{username, email}]
+    })
+
+    // if user is still not found then user is not there. 
+
+    if(!user){
+        throw new ApiError(404, "User doesn't exist");
+    }
+
+    // Now if user is found, check password. 
+    const isPasswordValid = await user.isPasswordCorrect(password)
+
+    if(!isPasswordValid){
+        throw new ApiError(401, "Password incorrect");
+    }
+
+    // Access and Refresh Token, if everything is fine
+    // we have to user these two more times, so create a method for that . 
+
+    // call the method 
+
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+    // send them now in cookies.
+    // we need to send info to user, and what info should be sent to the user. 
+
+    // another query 
+
+    // no need to send password to user. 
+
+    const loggedInUser = await User.findById(user._id);
+    select("-password -refreshToken");
+
+    // for cookies, should not be updated by user. make it secure. 
+
+    const options = {
+        httpOnly: true, 
+        secure: true,
+
+    }
+
+    return res
+    .status(200).cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(
+            200, 
+            {
+                user: loggedInUser, accessToken, refreshToken,
+                // what if he wants to save the refresh token? in mobile there is no cookies. 
+
+            },
+            "User LoggedIn Successfully"
+        )
+    )
+})
+
+const logOutUser = asyncHandler(async(req, res)=>{
+    // how can we logout? clear cookies, 
+    // refresh token to khtm karna prhy ga
+
+    // how to get the userId if he wants to logout? should he be entering email or password? NO
+    // Middleware will play its role now, no need to get username or email 
+
+
+    // now we have the user.. first create middleware
+    // req.user._id
+
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshToken: undefined,
+            }
+        },  
+        {  // this is for return response with updated value, as we undefined the tokens. 
+
+            new: true
+        }
+    )
+
+    
+    const options = {
+        httpOnly: true, 
+        secure: true,
+
+    }
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User Logout"))
+    
+})
+
+export {
+    registerUser,
+    loginUser, 
+    logOutUser
+}
