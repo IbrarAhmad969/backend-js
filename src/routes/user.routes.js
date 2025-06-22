@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {registerUser, logOutUser, loginUser} from "../controllers/user.controller.js"
+import {registerUser, logOutUser, loginUser, refreshAccessToken} from "../controllers/user.controller.js"
 const router = Router();
 import { upload } from "../middlewares/Multer.middleware.js";
 import { verifyJWT } from "../middlewares/Auth.middleware.js";
@@ -23,7 +23,7 @@ router.route("/login").post(loginUser)
 // secured Routes 
 
 router.route("/logout").post(verifyJWT, logOutUser)
-
+router.route("/refresh-token").post(refreshAccessToken)
 
 // http://localhost:8000/users/reg
 
